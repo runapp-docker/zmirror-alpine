@@ -1,20 +1,20 @@
 FROM alpine:latest
 
-
 RUN cd / && apk add --update tzdata && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
-    apk add uwsgi uwsgi-python && wget https://github.com/aploium/zmirror/archive/master.zip && unzip master.zip && rm master.zip && \
-    chown -R uwsgi:uwsgi zmirror-master && pip3 install requests flask && \
+    apk add uwsgi uwsgi-python && pip3 install requests flask && \
     mkdir -p /etc/dropbear && apk add dropbear && rm -rf /var/cache/apk/*
 
+ENV PORT=80 \
+    SSH_PORT=8022 \
+    UWSGI_SOCKET_PORT=8000 \
+    UWSGI_STAT_PORT=8001
 
-ENV SSH_PORT=83 \
-    PORT=80 \
-    UWSGI_SOCKET_PORT=81 \
-    UWSGI_STAT_PORT=82
+EXPOSE ${PORT} ${SSH_PORT} ${UWSGI_SOCKET_PORT} ${UWSGI_STAT_PORT}
 
-EXPOSE ${HTTP_PORT} ${SSH_PORT} ${UWSGI_SOCKET_PORT} ${UWSGI_STAT_PORT}
+COPY zmirror-master-20200225.zip zmirror-uwsgi.tmpl entry.sh /
 
-COPY zmirror-uwsgi.tmpl entry.sh /
+RUN unzip zmirror-master-20200225.zip && rm zmirror-master-20200225.zip && chown -R uwsgi:uwsgi zmirror-master && \
+    chmod +x entry.sh
 
 ENV SSH_PASSWORD='**changeme**' \
     DOMAIN='localhost' \
@@ -23,5 +23,5 @@ ENV SSH_PASSWORD='**changeme**' \
     UWSGI_NUM_PROCESS=2 \
     UWSGI_NUM_THREAD=1
 
-CMD sh /entry.sh
+CMD /entry.sh
 
